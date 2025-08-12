@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVER_URL="http://192.168.18.20:5000"  # IP de tu servidor
+SERVER_URL="http://192.168.18.15:5000"  # IP de tu servidor
 MODE="${1:-get}"  # Modo por defecto: get
 LAST_LOCAL=""
 LAST_REMOTE=""
