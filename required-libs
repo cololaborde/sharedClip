@@ -1,9 +1,4 @@
 # para el servidor
 sudo apt install golang-go
 
-# para el cliente, ubuntu < 24
-sudo apt install jq
-
 sudo apt install xclip
-
-
