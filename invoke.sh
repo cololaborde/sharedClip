@@ -1,6 +1,8 @@
 #!/bin/bash
 
-SERVER_URL="http://192.168.18.15:5000"  # IP de tu servidor
+export $(grep -v '^#' .env | xargs)
+
+SERVER_URL="http://$HOST:$PORT"
 MODE="${1:-get}"  # Modo por defecto: get
 LAST_LOCAL=""
 LAST_REMOTE=""

@@ -2,31 +2,33 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+	"fmt"
 )
-
-const clipboardFile = "clipboard.txt"
 
 var (
+	host           string
+	port           int
+	clipboardPath  string
 	clipboardContent string
-	mu               sync.Mutex
+	mu             sync.Mutex
 )
 
-// Cargar contenido desde archivo (si existe)
 func loadClipboard() string {
-	data, err := os.ReadFile(clipboardFile)
+	data, err := os.ReadFile(clipboardPath)
 	if err != nil {
+		log.Printf("Error leyendo clipboard: %v", err)
 		return ""
 	}
 	return string(data)
 }
 
-// Guardar contenido en archivo
 func saveClipboard(content string) {
-	err := os.WriteFile(clipboardFile, []byte(content), 0644)
+	err := os.WriteFile(clipboardPath, []byte(content), 0644)
 	if err != nil {
 		log.Printf("Error guardando clipboard: %v", err)
 	}
@@ -64,11 +66,19 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Cargar valor previo al iniciar
+	// Definir flags con valores por defecto
+	flag.StringVar(&host, "host", "0.0.0.0", "Dirección IP o host donde escuchar")
+	flag.IntVar(&port, "port", 5011, "Puerto para el servidor HTTP")
+	flag.StringVar(&clipboardPath, "file", "clipboard.txt", "Ruta al archivo del clipboard")
+	flag.Parse()
+
 	clipboardContent = loadClipboard()
 
-	log.Println("Servidor escuchando en http://0.0.0.0:5000")
+	log.Printf("Servidor escuchando en http://%s:%d", host, port)
 	http.HandleFunc("/get", getClipboard)
 	http.HandleFunc("/set", setClipboard)
-	log.Fatal(http.ListenAndServe(":5000", nil))
+	log.Fatal(http.ListenAndServe(
+		host+":"+fmt.Sprint(port),
+		nil,
+	))
 }
