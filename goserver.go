@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
 	"os"
 	"sync"
 	"fmt"
+	"io"
 )
 
 var (
@@ -39,30 +39,34 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"content": clipboardContent,
-	})
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(clipboardContent))
 }
 
 func setClipboard(w http.ResponseWriter, r *http.Request) {
-	log.Printf("POST /set desde %s", r.RemoteAddr)
-	mu.Lock()
-	defer mu.Unlock()
+    log.Printf("POST /set desde %s", r.RemoteAddr)
 
-	var data map[string]string
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+    bodyBytes, err := io.ReadAll(r.Body)
+    if err != nil {
+        log.Printf("Error leyendo body: %v", err)
+        http.Error(w, "Error leyendo body", http.StatusInternalServerError)
+        return
+    }
 
-	clipboardContent = data["content"]
-	saveClipboard(clipboardContent)
+    log.Printf("Body recibido (%d bytes)", len(bodyBytes))
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"status": "ok",
-	})
+    mu.Lock()
+    defer mu.Unlock()
+
+    var content string
+
+    content = string(bodyBytes)
+
+    clipboardContent = content
+    saveClipboard(clipboardContent)
+
+    w.Header().Set("Content-Type", "text/plain")
+    w.Write([]byte("Contenido guardado correctamente"))
 }
 
 func main() {

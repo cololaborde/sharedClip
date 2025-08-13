@@ -8,7 +8,7 @@ LAST_LOCAL=""
 LAST_REMOTE=""
 
 get_clipboard() {
-    SERVER_CONTENT=$(curl -s "$SERVER_URL/get" | jq -r '.content')
+    SERVER_CONTENT=$(curl -s "$SERVER_URL/get")
 
     if [[ "$SERVER_CONTENT" != "$LAST_REMOTE" ]]; then
         echo "$SERVER_CONTENT" | xclip -selection clipboard
@@ -22,8 +22,8 @@ set_clipboard() {
     CURRENT=$(xclip -selection clipboard -o)
     if [[ "$CURRENT" != "$LAST_LOCAL" ]]; then
         curl -s -X POST "$SERVER_URL/set" \
-            -H "Content-Type: application/json" \
-            -d "{\"content\": \"$CURRENT\"}" > /dev/null
+            -H "Content-Type: text/plain" \
+            -d "$CURRENT" > /dev/null
         LAST_LOCAL="$CURRENT"
         LAST_REMOTE="$CURRENT"
         echo "[↑] Enviado al servidor: $CURRENT"
