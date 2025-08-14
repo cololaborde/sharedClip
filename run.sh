@@ -1,6 +1,6 @@
-#get from .env port, host and url for file
-
 export $(grep -v '^#' .env | xargs)
+
+# Required ENV variables: HOST, PORT, FILE
 
 if lsof -i :$PORT; then
   pid=$(lsof -ti :$PORT)

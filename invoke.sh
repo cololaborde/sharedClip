@@ -2,11 +2,12 @@
 
 export $(grep -v '^#' /home/colo/Documentos/sharedClip/.env | xargs)
 
+# Required ENV variables: HOST, PORT, MIN_SLOT, MAX_SLOT
+
 SERVER_URL="http://$HOST:$PORT"
 MODE="${1:-get}"  # Modo por defecto: get
 LAST_LOCAL=""
 LAST_REMOTE=""
-
 POS="${2:-0}"
 
 get_clipboard() {
@@ -32,8 +33,8 @@ set_clipboard() {
     fi
 }
 
-if [[ "$POS" -lt 0 || "$POS" -ge 10 ]]; then
-    echo "Posición inválida. Debe estar entre 0 y 9."
+if [[ "$POS" -lt "$MIN_SLOT" || "$POS" -gt "$MAX_SLOT" ]]; then
+    echo "Posición inválida. Debe estar entre $MIN_SLOT y $MAX_SLOT."
     exit 1
 fi
 if [[ "$MODE" == "get" ]]; then
@@ -41,5 +42,5 @@ if [[ "$MODE" == "get" ]]; then
 elif [[ "$MODE" == "set" ]]; then
     set_clipboard
 else
-    echo "Uso: $0 [get|set] [pos[0..9]]"
+    echo "Uso: $0 [get|set] [pos[$MIN_SLOT..$MAX_SLOT]]"
 fi
