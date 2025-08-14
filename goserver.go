@@ -2,87 +2,111 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
-	"fmt"
-	"io"
 )
 
 var (
-	host           string
-	port           int
-	clipboardPath  string
-	clipboardContent string
-	mu             sync.Mutex
+	host          string
+	port          int
+	clipboardPath string
+	mu            sync.Mutex
 )
 
-func loadClipboard() string {
+// Lee el archivo y devuelve el slice de líneas
+func loadClipboard() []string {
 	data, err := os.ReadFile(clipboardPath)
 	if err != nil {
 		log.Printf("Error leyendo clipboard: %v", err)
-		return ""
+		return []string{}
 	}
-	return string(data)
+	return strings.Split(strings.TrimRight(string(data), "\n"), "\n")
 }
 
-func saveClipboard(content string) {
-	err := os.WriteFile(clipboardPath, []byte(content), 0644)
+// Guarda el slice de líneas en el archivo
+func saveClipboard(content []string) {
+	err := os.WriteFile(clipboardPath, []byte(strings.Join(content, "\n")), 0644)
 	if err != nil {
 		log.Printf("Error guardando clipboard: %v", err)
 	}
 }
 
 func getClipboard(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GET /get desde %s", r.RemoteAddr)
+	posStr := r.URL.Query().Get("pos")
+	pos, err := strconv.Atoi(posStr)
+	if err != nil {
+		http.Error(w, "Posición inválida", http.StatusBadRequest)
+		return
+	}
+
 	mu.Lock()
 	defer mu.Unlock()
 
+	content := loadClipboard()
+
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(clipboardContent))
+	if pos < 0 || pos >= len(content) {
+		w.Write([]byte("")) // posición vacía
+	} else {
+		w.Write([]byte(content[pos]))
+	}
 }
 
 func setClipboard(w http.ResponseWriter, r *http.Request) {
-    log.Printf("POST /set desde %s", r.RemoteAddr)
+	posStr := r.URL.Query().Get("pos")
+	pos, err := strconv.Atoi(posStr)
+	if err != nil {
+		http.Error(w, "Posición inválida", http.StatusBadRequest)
+		return
+	}
 
-    bodyBytes, err := io.ReadAll(r.Body)
-    if err != nil {
-        log.Printf("Error leyendo body: %v", err)
-        http.Error(w, "Error leyendo body", http.StatusInternalServerError)
-        return
-    }
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error leyendo body", http.StatusInternalServerError)
+		return
+	}
+	nuevoContenido := string(bodyBytes)
 
-    log.Printf("Body recibido (%d bytes)", len(bodyBytes))
+	mu.Lock()
+	defer mu.Unlock()
 
-    mu.Lock()
-    defer mu.Unlock()
+	content := loadClipboard()
 
-    var content string
+	// Expandir si hace falta
+	for len(content) <= pos {
+		content = append(content, "")
+	}
 
-    content = string(bodyBytes)
+	// Actualizar posición
+	content[pos] = nuevoContenido
 
-    clipboardContent = content
-    saveClipboard(clipboardContent)
+	saveClipboard(content)
 
-    w.Header().Set("Content-Type", "text/plain")
-    w.Write([]byte("Contenido guardado correctamente"))
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("Posición actualizada correctamente"))
+
+	// Limpiar memoria para no escribir datos viejos
+	content = nil
+
 }
 
 func main() {
-	// Definir flags con valores por defecto
 	flag.StringVar(&host, "host", "0.0.0.0", "Dirección IP o host donde escuchar")
 	flag.IntVar(&port, "port", 5011, "Puerto para el servidor HTTP")
 	flag.StringVar(&clipboardPath, "file", "clipboard.txt", "Ruta al archivo del clipboard")
 	flag.Parse()
 
-	clipboardContent = loadClipboard()
-
 	log.Printf("Servidor escuchando en http://%s:%d", host, port)
 	http.HandleFunc("/get", getClipboard)
 	http.HandleFunc("/set", setClipboard)
 	log.Fatal(http.ListenAndServe(
-		host+":"+fmt.Sprint(port),
+		fmt.Sprintf("%s:%d", host, port),
 		nil,
 	))
 }
