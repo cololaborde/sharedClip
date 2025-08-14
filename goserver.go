@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -8,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -22,29 +22,39 @@ var (
 const clipboardFileMode = 0644
 const maxClipboardEntries = 10
 
-// Lee el archivo y devuelve el slice de líneas
-func loadClipboard() []string {
-	data, err := os.ReadFile(clipboardPath)
+// Carga el clipboard.json como map[pos] = texto
+func loadClipboard() map[string]string {
+	file, err := os.ReadFile(clipboardPath)
 	if err != nil {
-		log.Printf("Error leyendo clipboard: %v", err)
-		return []string{}
+		// Si no existe o hay error, devolvemos vacío
+		return make(map[string]string)
 	}
-	return strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+
+	var content map[string]string
+	if err := json.Unmarshal(file, &content); err != nil {
+		log.Printf("Error parseando JSON: %v", err)
+		return make(map[string]string)
+	}
+	return content
 }
 
-// Guarda el slice de líneas en el archivo
-func saveClipboard(content []string) {
-	err := os.WriteFile(clipboardPath, []byte(strings.Join(content, "\n")), clipboardFileMode)
+// Guarda el map en clipboard.json
+func saveClipboard(content map[string]string) {
+	data, err := json.MarshalIndent(content, "", "  ")
 	if err != nil {
+		log.Printf("Error serializando JSON: %v", err)
+		return
+	}
+	if err := os.WriteFile(clipboardPath, data, clipboardFileMode); err != nil {
 		log.Printf("Error guardando clipboard: %v", err)
 	}
 }
 
+// GET /get?pos=N
 func getClipboard(w http.ResponseWriter, r *http.Request) {
 	posStr := r.URL.Query().Get("pos")
 	pos, err := strconv.Atoi(posStr)
 	if err != nil || pos < 0 || pos >= maxClipboardEntries {
-		//http.Error(w, "Posición inválida", http.StatusBadRequest)
 		return
 	}
 
@@ -52,57 +62,44 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 	defer mu.Unlock()
 
 	content := loadClipboard()
-
 	w.Header().Set("Content-Type", "text/plain")
-	if pos < 0 || pos >= len(content) {
-		w.Write([]byte("")) // posición vacía
+
+	if val, ok := content[posStr]; ok {
+		w.Write([]byte(val))
 	} else {
-		w.Write([]byte(content[pos]))
+		w.Write([]byte("")) // vacío
 	}
 }
 
+// POST /set?pos=N  (body = texto)
 func setClipboard(w http.ResponseWriter, r *http.Request) {
 	posStr := r.URL.Query().Get("pos")
 	pos, err := strconv.Atoi(posStr)
 	if err != nil || pos < 0 || pos >= maxClipboardEntries {
-		//http.Error(w, "Posición inválida", http.StatusBadRequest)
 		return
 	}
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		//http.Error(w, "Error leyendo body", http.StatusInternalServerError)
 		return
 	}
-	nuevoContenido := string(bodyBytes)
+	newText := string(bodyBytes)
 
 	mu.Lock()
 	defer mu.Unlock()
 
 	content := loadClipboard()
-
-	// Expandir si hace falta
-	for len(content) <= pos {
-		content = append(content, "")
-	}
-
-	// Actualizar posición
-	content[pos] = nuevoContenido
-
+	content[posStr] = newText
 	saveClipboard(content)
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte("Posición actualizada correctamente"))
-
-	// Limpiar memoria para no escribir datos viejos
-	content = nil
-
 }
 
 func main() {
 	flag.StringVar(&host, "host", "0.0.0.0", "Dirección IP o host donde escuchar")
 	flag.IntVar(&port, "port", 5011, "Puerto para el servidor HTTP")
-	flag.StringVar(&clipboardPath, "file", "clipboard.txt", "Ruta al archivo del clipboard")
+	flag.StringVar(&clipboardPath, "file", "clipboard.json", "Ruta al archivo del clipboard JSON")
 	flag.Parse()
 
 	log.Printf("Servidor escuchando en http://%s:%d", host, port)
