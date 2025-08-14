@@ -3,9 +3,13 @@
 # =======================
 # CONFIG
 # =======================
-NOMBRE="get clip"
-COMANDO="/home/colo/Documentos/sharedClip/invoke.sh get"
-ATAJO="<Super><Alt>c"
+NOMBRE="$1 $2"
+COMANDO="/home/colo/Documentos/sharedClip/invoke.sh $1 $2"
+if [[ "$1" == "get" ]]; then
+    ATAJO="<Super><Alt>$2"
+elif [[ "$1" == "set" ]]; then
+    ATAJO="<Ctrl><Alt>$2"
+fi
 KEY_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
 
 # =======================
