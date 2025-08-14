@@ -19,6 +19,9 @@ var (
 	mu            sync.Mutex
 )
 
+const clipboardFileMode = 0644
+const maxClipboardEntries = 10
+
 // Lee el archivo y devuelve el slice de líneas
 func loadClipboard() []string {
 	data, err := os.ReadFile(clipboardPath)
@@ -31,7 +34,7 @@ func loadClipboard() []string {
 
 // Guarda el slice de líneas en el archivo
 func saveClipboard(content []string) {
-	err := os.WriteFile(clipboardPath, []byte(strings.Join(content, "\n")), 0644)
+	err := os.WriteFile(clipboardPath, []byte(strings.Join(content, "\n")), clipboardFileMode)
 	if err != nil {
 		log.Printf("Error guardando clipboard: %v", err)
 	}
@@ -40,8 +43,8 @@ func saveClipboard(content []string) {
 func getClipboard(w http.ResponseWriter, r *http.Request) {
 	posStr := r.URL.Query().Get("pos")
 	pos, err := strconv.Atoi(posStr)
-	if err != nil {
-		http.Error(w, "Posición inválida", http.StatusBadRequest)
+	if err != nil || pos < 0 || pos >= maxClipboardEntries {
+		//http.Error(w, "Posición inválida", http.StatusBadRequest)
 		return
 	}
 
@@ -61,14 +64,14 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 func setClipboard(w http.ResponseWriter, r *http.Request) {
 	posStr := r.URL.Query().Get("pos")
 	pos, err := strconv.Atoi(posStr)
-	if err != nil {
-		http.Error(w, "Posición inválida", http.StatusBadRequest)
+	if err != nil || pos < 0 || pos >= maxClipboardEntries {
+		//http.Error(w, "Posición inválida", http.StatusBadRequest)
 		return
 	}
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error leyendo body", http.StatusInternalServerError)
+		//http.Error(w, "Error leyendo body", http.StatusInternalServerError)
 		return
 	}
 	nuevoContenido := string(bodyBytes)
