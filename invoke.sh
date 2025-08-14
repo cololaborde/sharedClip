@@ -7,8 +7,10 @@ MODE="${1:-get}"  # Modo por defecto: get
 LAST_LOCAL=""
 LAST_REMOTE=""
 
+POS=$2
+
 get_clipboard() {
-    SERVER_CONTENT=$(curl -s "$SERVER_URL/get?pos=0")
+    SERVER_CONTENT=$(curl -s "$SERVER_URL/get?pos=$POS")
 
     if [[ "$SERVER_CONTENT" != "$LAST_REMOTE" ]]; then
         echo "$SERVER_CONTENT" | xclip -selection clipboard
@@ -21,7 +23,7 @@ get_clipboard() {
 set_clipboard() {
     CURRENT=$(xclip -selection clipboard -o)
     if [[ "$CURRENT" != "$LAST_LOCAL" ]]; then
-        curl -s -X POST "$SERVER_URL/set?pos=0" \
+        curl -s -X POST "$SERVER_URL/set?pos=$POS" \
             -H "Content-Type: text/plain" \
             -d "$CURRENT" > /dev/null
         LAST_LOCAL="$CURRENT"
