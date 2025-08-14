@@ -32,10 +32,14 @@ set_clipboard() {
     fi
 }
 
+if [[ "$POS" -lt 0 || "$POS" -ge 10 ]]; then
+    echo "Posición inválida. Debe estar entre 0 y 9."
+    exit 1
+fi
 if [[ "$MODE" == "get" ]]; then
     get_clipboard
 elif [[ "$MODE" == "set" ]]; then
     set_clipboard
 else
-    echo "Uso: $0 [get|set]"
+    echo "Uso: $0 [get|set] [pos[0..9]]"
 fi
