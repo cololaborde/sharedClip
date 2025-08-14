@@ -7,7 +7,7 @@ MODE="${1:-get}"  # Modo por defecto: get
 LAST_LOCAL=""
 LAST_REMOTE=""
 
-POS=$2
+POS="${2:-0}"
 
 get_clipboard() {
     SERVER_CONTENT=$(curl -s "$SERVER_URL/get?pos=$POS")
