@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' /home/colo/Documentos/sharedClip/.env | xargs)
 
 SERVER_URL="http://$HOST:$PORT"
 MODE="${1:-get}"  # Modo por defecto: get
