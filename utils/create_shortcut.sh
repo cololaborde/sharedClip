@@ -4,7 +4,7 @@
 # CONFIG
 # =======================
 NOMBRE="$1 $2"
-COMANDO="/home/colo/Documentos/sharedClip/invoke.sh $1 $2"
+COMANDO="$HOME/Documentos/sharedClip/invoke.sh $1 $2"
 if [[ "$1" == "get" ]]; then
     ATAJO="<Super><Alt>$2"
 elif [[ "$1" == "set" ]]; then

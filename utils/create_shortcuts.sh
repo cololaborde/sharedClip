@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-export $(grep -v '^#' /home/colo/Documentos/sharedClip/.env | xargs)
+export $(grep -v '^#' $HOME/Documentos/sharedClip/.env | xargs)
 
 # Required ENV variables: MIN_SLOT, MAX_SLOT
 
