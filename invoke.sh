@@ -14,7 +14,11 @@ get_clipboard() {
     SERVER_CONTENT=$(curl -s "$SERVER_URL/get?pos=$POS")
 
     if [[ "$SERVER_CONTENT" != "$LAST_REMOTE" ]]; then
-        echo "$SERVER_CONTENT" | xclip -selection clipboard
+        if [[ "$SERVER_CONTENT" == file://* ]]; then
+            echo "$SERVER_CONTENT" | xclip -selection clipboard -t "text/uri-list"
+        elif [[ "$SERVER_CONTENT" == * ]]; then
+            echo "$SERVER_CONTENT" | xclip -selection clipboard -t "text/plain"
+        fi
         LAST_REMOTE="$SERVER_CONTENT"
         LAST_LOCAL="$SERVER_CONTENT"
         echo "[↓] Actualizado desde servidor: $SERVER_CONTENT"
@@ -22,7 +26,13 @@ get_clipboard() {
 }
 
 set_clipboard() {
-    CURRENT=$(xclip -selection clipboard -o)
+    if CURRENT=$(xclip -selection clipboard -t text/uri-list -o 2>/dev/null); then
+        echo "is file(s)"
+    else
+        echo "is text"
+        CURRENT=$(xclip -selection clipboard -o 2>/dev/null)
+    fi
+    echo "$CURRENT"
     if [[ "$CURRENT" != "$LAST_LOCAL" ]]; then
         curl -s -X POST "$SERVER_URL/set?pos=$POS" \
             -H "Content-Type: text/plain" \
