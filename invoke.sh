@@ -19,8 +19,8 @@ get_clipboard() {
             filename=$(echo "$payload" | cut -d"|" -f1)
             b64_content=$(echo "$payload" | cut -d"|" -f2-)
 
-            if echo "$b64_content" | base64 -d > "/home/colo/$filename" 2>/dev/null; then
-                echo "[↓] Archivo guardado en /home/colo/$filename"
+            if echo "$b64_content" | base64 -d > "$FILE_SAVE_PATH$filename" 2>/dev/null; then
+                echo "[↓] Archivo guardado en $FILE_SAVE_PATH$filename"
             else
                 echo "[!] Error al decodificar o guardar el archivo."
             fi
