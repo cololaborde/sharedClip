@@ -15,31 +15,45 @@ get_clipboard() {
 
     if [[ "$SERVER_CONTENT" != "$LAST_REMOTE" ]]; then
         if [[ "$SERVER_CONTENT" == file://* ]]; then
-            echo "$SERVER_CONTENT" | xclip -selection clipboard -t "text/uri-list"
+            payload=$(echo "$SERVER_CONTENT" | sed -e 's|^file://||' | tr -d '\n\r ')
+            filename=$(echo "$payload" | cut -d"|" -f1)
+            b64_content=$(echo "$payload" | cut -d"|" -f2-)
+
+            if echo "$b64_content" | base64 -d > "/home/colo/$filename" 2>/dev/null; then
+                echo "[↓] Archivo guardado en /home/colo/$filename"
+            else
+                echo "[!] Error al decodificar o guardar el archivo."
+            fi
         else
             echo "$SERVER_CONTENT" | xclip -selection clipboard
         fi
+
         LAST_REMOTE="$SERVER_CONTENT"
         LAST_LOCAL="$SERVER_CONTENT"
-        echo "[↓] Actualizado desde servidor: $SERVER_CONTENT"
     fi
 }
 
 set_clipboard() {
     if CURRENT=$(xclip -selection clipboard -t text/uri-list -o 2>/dev/null); then
         echo "is file(s)"
+        path=$(echo "$CURRENT" | sed -e 's|^file://||' | tr -d '\n\r')
+
+        filename=$(basename "$path")
+        b64_encode=$(base64 -w0 "$path")
+
+        # usamos "|" como separador
+        CURRENT="file://$filename|$b64_encode"
     else
         echo "is text"
         CURRENT=$(xclip -selection clipboard -o 2>/dev/null)
     fi
-    echo "$CURRENT"
+
     if [[ "$CURRENT" != "$LAST_LOCAL" ]]; then
-        curl -s -X POST "$SERVER_URL/set?pos=$POS" \
+        echo -n "$CURRENT" | curl -s -X POST "$SERVER_URL/set?pos=$POS" \
             -H "Content-Type: text/plain" \
-            -d "$CURRENT" > /dev/null
+            --data-binary @- > /dev/null
         LAST_LOCAL="$CURRENT"
         LAST_REMOTE="$CURRENT"
-        echo "[↑] Enviado al servidor: $CURRENT"
     fi
 }
 
