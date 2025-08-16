@@ -38,10 +38,16 @@ set_clipboard() {
         echo "is file(s)"
         path=$(echo "$CURRENT" | sed -e 's|^file://||' | tr -d '\n\r')
 
+        # check file size
+        file_size=$(stat -c%s "$path")
+        if [[ "$file_size" -gt 1048576 ]]; then
+            echo "[!] El archivo es demasiado grande para manejarlo. Tamaño maximo 1 MB"
+            return
+        fi
         filename=$(basename "$path")
         b64_encode=$(base64 -w0 "$path")
 
-        # usamos "|" como separador
+        # se guarda nombre y encoding
         CURRENT="file://$filename|$b64_encode"
     else
         echo "is text"
