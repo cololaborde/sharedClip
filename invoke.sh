@@ -40,7 +40,7 @@ set_clipboard() {
 
         # check file size
         file_size=$(stat -c%s "$path")
-        if [[ "$file_size" -gt 1048576 ]]; then
+        if [[ "$file_size" -gt $MAX_FILE_SIZE ]]; then
             echo "[!] El archivo es demasiado grande para manejarlo. Tamaño maximo 1 MB"
             return
         fi
