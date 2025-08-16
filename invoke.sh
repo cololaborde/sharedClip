@@ -16,8 +16,8 @@ get_clipboard() {
     if [[ "$SERVER_CONTENT" != "$LAST_REMOTE" ]]; then
         if [[ "$SERVER_CONTENT" == file://* ]]; then
             echo "$SERVER_CONTENT" | xclip -selection clipboard -t "text/uri-list"
-        elif [[ "$SERVER_CONTENT" == * ]]; then
-            echo "$SERVER_CONTENT" | xclip -selection clipboard -t "text/plain"
+        else
+            echo "$SERVER_CONTENT" | xclip -selection clipboard
         fi
         LAST_REMOTE="$SERVER_CONTENT"
         LAST_LOCAL="$SERVER_CONTENT"
