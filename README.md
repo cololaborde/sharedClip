@@ -43,7 +43,7 @@ PORT=5011
 FILE=clipboard.json
 MIN_SLOT=0
 MAX_SLOT=9
-MAX_FILE_SIZE=1048576   # 1 MB
+MAX_FILE_SIZE=1048576
 FILE_COPY_PATH=/home/youruser/Downloads/sharedclip_received/
 ```
 
