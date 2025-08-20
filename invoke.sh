@@ -37,6 +37,7 @@ set_clipboard() {
     if CURRENT=$(xclip -selection clipboard -t text/uri-list -o 2>/dev/null); then
         echo "is file(s)"
         path=$(echo "$CURRENT" | sed -e 's|^file://||' | tr -d '\n\r')
+        path=$(printf '%b' "${path//%/\\x}")
 
         # check file size
         file_size=$(stat -c%s "$path")
