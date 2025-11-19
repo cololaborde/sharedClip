@@ -1,5 +1,4 @@
 *.txt
 *.log
 .env
-miapp
 *.json
